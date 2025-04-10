@@ -15,7 +15,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('booking_id')->constrained('bookings')->onDelete('cascade'); // Relasi ke bookings
             $table->foreignUuid('packages_id')->constrained('packages')->onDelete('cascade'); // Relasi ke packages
-            $table->timestamps(); // created_at dan updated_at otomatis
+            $table->decimal('price', 10, 2);
+            $table->integer('quantity')->nullable();
+            $table->timestamps();
         });
     }
 

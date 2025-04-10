@@ -13,18 +13,27 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name'); // Nama pelanggan
-            $table->string('phone_number'); // Nomor HP
-            $table->string('instagram')->nullable(); // Instagram (opsional)
-            $table->string('email')->nullable(); // Email (opsional)
-            $table->foreignUuid('package_id')->constrained('packages')->onDelete('cascade'); // Relasi ke packages
+            $table->string('invoice')->unique();
+            $table->string('name');
+            $table->string('phone_number');
+            $table->string('instagram')->nullable();
+            $table->string('email')->nullable();
+            $table->foreignUuid('package_id')->constrained('packages')->onDelete('cascade');
             $table->date('booking_date');
-            $table->timestamp('available')->nullable(); // Waktu mulai booking
-            $table->timestamp('unavailable')->nullable(); // Waktu terakhir booking harus selesai
-            $table->timestamp('estimated_completion')->nullable(); // Perkiraan waktu selesai
-            $table->string('status')->default('pending'); // Status booking
-            $table->decimal('price', 10, 2);
-            $table->timestamps(); // created_at dan updated_at otomatisdated_at otomatis
+            $table->time('booking_time')->nullable(); // Adding booking time
+            $table->text('event_address')->nullable(); // Adding event address
+            $table->timestamp('available')->nullable();
+            $table->timestamp('unavailable')->nullable();
+            $table->timestamp('estimated_completion')->nullable();
+            $table->string('status_payment'); // 'partial', 'complete'
+            $table->decimal('total_price', 10, 2); // Full price
+            $table->decimal('deposit_amount', 10, 2)->nullable(); // Deposit amount paid
+            $table->decimal('remaining_amount', 10, 2)->nullable(); // Remaining amount to pay
+            $table->json('payment_info')->nullable();
+            $table->json('payment_type')->nullable();
+            $table->dateTime('succeeded_at')->nullable();
+            $table->dateTime('full_payment_at')->nullable(); // When full payment completed
+            $table->timestamps();
         });
     }
 

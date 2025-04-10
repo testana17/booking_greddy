@@ -14,10 +14,20 @@ class Packages extends Model
     protected $primaryKey = 'id';
     protected $keyType = 'string';
     public $incrementing = false;
-    
+
     protected $fillable = [
         'name',
         'price',
         'description',
     ];
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function bookingDetails()
+    {
+        return $this->hasMany(BookingDetail::class, 'packages_id');
+    }
 }

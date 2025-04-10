@@ -19,65 +19,130 @@ class Booking extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'invoice',
         'name',
         'phone_number',
         'instagram',
         'email',
         'package_id',
         'booking_date',
-        'status',
+        'booking_time',
+        'event_address',
         'available',
         'unavailable',
         'estimated_completion',
-        'price'
+        'status_payment',
+        'total_price',
+        'deposit_amount',
+        'remaining_amount',
+        'payment_info',
+        'payment_type',
+        'succeeded_at',
+        'full_payment_at',
+        'total'
     ];
 
     protected $casts = [
+        'payment_info' => 'array',
+        'payment_type' => 'array',
         'booking_date' => 'date',
         'available' => 'datetime',
         'unavailable' => 'datetime',
         'estimated_completion' => 'datetime',
+        'succeeded_at' => 'datetime',
+        'full_payment_at' => 'datetime',
     ];
 
-    /**
-     * Relasi ke Package (Paket yang dipesan).
-     */
-    public function package(): ?BelongsTo
+    public function package()
     {
-        return $this->belongsTo(Package::class);
+        return $this->belongsTo(Packages::class);
     }
 
-    /**
-     * Relasi ke Venue (Tempat acara).
-     */
-    public function venue(): ?BelongsTo
-    {
-        return $this->belongsTo(Venue::class);
-    }
-
-    /**
-     * Relasi ke Payment (Pembayaran terkait booking ini).
-     */
-    public function payment(): ?HasOne
-    {
-        return $this->hasOne(Payment::class);
-    }
-
-    /**
-     * Relasi ke BookingDetails (Detail booking seperti venue & package).
-     */
-    public function details(): HasMany
+    public function details()
     {
         return $this->hasMany(BookingDetail::class);
     }
 
+    public function payments()
+    {
+        return $this->hasMany(Payments::class);
+    }
+
+    public function isFullyPaid()
+    {
+        return $this->status_payment === 'complete';
+    }
+
+    public function hasDeposit()
+    {
+        return $this->status_payment === 'partial';
+    }
+
+    // protected $fillable = [
+    //     'invoice',
+    //     'name',
+    //     'phone_number',
+    //     'instagram',
+    //     'email',
+    //     'package_id',
+    //     'booking_date',
+    //     'status',
+    //     'available',
+    //     'unavailable',
+    //     'estimated_completion',
+    //     'status_payment',
+    //     'payment_info',
+    //     'payment_type',
+    //     'succeeded_at',
+    //     'total'
+    // ];
+
+    // protected $casts = [
+    //     'booking_date' => 'date',
+    //     'available' => 'datetime',
+    //     'unavailable' => 'datetime',
+    //     'estimated_completion' => 'datetime',
+    // ];
+
+    /**
+     * Relasi ke Package (Paket yang dipesan).
+     */
+    // public function package(): ?BelongsTo
+    // {
+    //     return $this->belongsTo(Packages::class);
+    // }
+
+    /**
+     * Relasi ke Venue (Tempat acara).
+     */
+    // public function venue(): ?BelongsTo
+    // {
+    //     return $this->belongsTo(Venue::class);
+    // }
+
+    /**
+     * Relasi ke Payment (Pembayaran terkait booking ini).
+     */
+    // public function payment(): ?HasOne
+    // {
+    //     return $this->hasOne(Payment::class);
+    // }
+
+    /**
+     * Relasi ke BookingDetails (Detail booking seperti venue & package).
+     */
+    // public function details(): HasMany
+    // {
+    //     return $this->hasMany(BookingDetail::class);
+    // }
+
     /**
      * Relasi ke EmailNotification (Notifikasi booking via email).
      */
-    public function notifications(): HasMany
-    {
-        return $this->hasMany(EmailNotification::class);
-    }
+    // public function notifications(): HasMany
+    // {
+    //     return $this->hasMany(EmailNotification::class);
+    // }
 
     /**
      * Set default status booking jika belum diisi.
