@@ -31,9 +31,9 @@ class PaymentReminderCommand extends Command
     public function handle()
     {
         // Get date exactly 7 days from now
-        // $targetDate = Carbon::now('Asia/Jakarta')->addDays(7)->toDateString();
+        $targetDate = Carbon::now('Asia/Jakarta')->addDays(7)->toDateString();
 
-        $targetDate = '2025-04-17';
+        // $targetDate = '2025-04-17';
 
         $this->info("Checking for bookings scheduled on: " . $targetDate);
 

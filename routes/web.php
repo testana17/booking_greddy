@@ -24,6 +24,11 @@ Route::get('/login', [HomeController::class, 'login'])->name('login');
 Route::post('/login', [HomeController::class, 'loginpost'])->name('login_post');
 Route::get('/logout', [HomeController::class,'logout'])->name('logout');
 
+Route::get('/cek-tanggal/{date}', [CheckoutController::class, 'cektanggal']);
+Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');
+Route::get('/booking/success', [CheckoutController::class, 'success'])->name('success');
+// Route::post('/midtrans/callback', [CheckoutController::class, 'callback']);
+
 Route::prefix('admin')->middleware('auth')->group(function(){
 
     Route::get('/dashboard', [HomeController::class, 'index'])->name('home');
@@ -34,9 +39,5 @@ Route::prefix('admin')->middleware('auth')->group(function(){
     Route::get('/transaction', [TransactionController::class, 'index'])->name('transaction');
     Route::get('/transaction/{id}', [TransactionController::class, 'show'])->name('transaction.show');
 
-    Route::get('/cek-tanggal/{date}', [CheckoutController::class, 'cektanggal']);
-    Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');
-    Route::get('/booking/success', [CheckoutController::class, 'success'])->name('success');
-    // Route::post('/midtrans/callback', [CheckoutController::class, 'callback']);
 });
 

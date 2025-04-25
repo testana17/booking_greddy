@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('instagram')->nullable();
             $table->string('email')->unique();
             $table->string('tempat_acara');
-            $table->string('password')->unique();
+            $table->string('password')->nullable();
             $table->timestamps();
         });
 
