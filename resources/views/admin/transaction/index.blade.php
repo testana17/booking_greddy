@@ -5,6 +5,11 @@
         <h6 class="m-0 font-weight-bold text-primary">Transaction List</h6>
     </div>
     <div class="card-body">
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
         <div class="table-responsive">
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                 <thead>
@@ -36,9 +41,21 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('transaction.show', $transaction->id) }}" class="btn btn-info btn-sm">
-                                <i class="fas fa-eye"></i> Detail
-                            </a>
+                            <div class="btn-group">
+                                <a href="{{ route('transaction.show', $transaction->id) }}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-eye"></i> Detail
+                                </a>
+                                <a href="{{ route('transaction.edit', $transaction->id) }}" class="btn btn-primary btn-sm ml-1">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form action="{{ route('transaction.destroy', $transaction->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm ml-1" onclick="return confirm('Are you sure you want to delete this transaction?')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty

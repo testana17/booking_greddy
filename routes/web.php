@@ -35,9 +35,11 @@ Route::prefix('admin')->middleware('auth')->group(function(){
 
     Route::resource('package', App\Http\Controllers\PackageController::class);
 
-
     Route::get('/transaction', [TransactionController::class, 'index'])->name('transaction');
     Route::get('/transaction/{id}', [TransactionController::class, 'show'])->name('transaction.show');
+    Route::get('/transaction/{id}/edit', [TransactionController::class, 'edit'])->name('transaction.edit');
+    Route::put('/transaction/{id}', [TransactionController::class, 'update'])->name('transaction.update');
+    Route::delete('/transaction/{id}', [TransactionController::class, 'destroy'])->name('transaction.destroy');
 
 });
 
