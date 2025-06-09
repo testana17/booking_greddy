@@ -4,12 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Traver - Discover The Best Destinations</title>
+    <title>Neumories - Wedding Booking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite('resources/css/app.css')
     <style>
+  
+.gradient-bg {
+      background-image: linear-gradient(to right, #f43f5e, #e11d48);
+    }
         .rose-gradient {
             background: linear-gradient(135deg, #f8e1e8 0%, #f5c4d2 100%);
         }
+        
 
         .rose-card {
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);

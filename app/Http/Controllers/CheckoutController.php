@@ -16,22 +16,105 @@ use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
-    public function cektanggal($date)
-    {
-        $existingBookings = Booking::where('booking_date', $date)
-            ->whereIn('status_payment', ['complete', 'partial', 'paid'])
-            ->get();
-
-        return response()->json([
-            'is_available' => $existingBookings->isEmpty(),
-            'bookings' => $existingBookings->map(function ($booking) {
-                return [
-                    'package_id' => $booking->package_id,
-                    'status' => $booking->status_payment,
-                ];
-            }),
-        ]);
+    
+ public function cektanggal($date)
+{
+    $existingBookings = Booking::where('booking_date', $date)
+        ->whereIn('status_payment', ['complete', 'partial', 'paid'])
+        ->with('package')
+        ->get();
+        
+    // Define package restrictions
+    $exclusivePackages = [
+        'Prewedding Neusweat',
+        'Traditional Neusweat', 
+        'Before Neusweat',
+        'Wedding Neudeluxe'
+    ];
+    
+    $restrictedPackages = [
+        'Wedding Neusweat',
+        'Prewedding Neubasic',
+        'Traditional Neubasic',
+        'Before Neubasic'
+    ];
+    
+    $restrictions = [];
+    $hasExclusiveBooking = false;
+    $hasRestrictedBooking = false;
+    
+    foreach ($existingBookings as $booking) {
+        $packageName = $booking->package->name;
+        
+        // Check if there's an exclusive package booking
+        if (in_array($packageName, $exclusivePackages)) {
+            $hasExclusiveBooking = true;
+            $restrictions[] = [
+                'package_id' => $booking->package_id,
+                'package_name' => $packageName,
+                'restriction_type' => 'exclusive',
+                'status' => $booking->status_payment
+            ];
+        }
+        
+        // Check if there's a restricted package booking
+        if (in_array($packageName, $restrictedPackages)) {
+            $hasRestrictedBooking = true;
+            $restrictions[] = [
+                'package_id' => $booking->package_id,
+                'package_name' => $packageName,
+                'restriction_type' => 'restricted',
+                'status' => $booking->status_payment
+            ];
+        }
     }
+    
+    // Get all packages for comparison
+    $allPackages = Packages::all();
+    $disabledPackages = [];
+    $onlyPhotoAllowed = false;
+    
+    if ($hasExclusiveBooking) {
+        // If exclusive package is booked, disable all other packages
+        foreach ($allPackages as $package) {
+            if (!$existingBookings->contains('package_id', $package->id)) {
+                $disabledPackages[] = [
+                    'package_id' => $package->id,
+                    'reason' => 'exclusive_booked'
+                ];
+            }
+        }
+    } elseif ($hasRestrictedBooking) {
+        // If restricted package is booked, only allow Photo Only
+        $onlyPhotoAllowed = true;
+        foreach ($allPackages as $package) {
+            // Disable all packages except Photo Only and already booked packages
+            if ($package->name !== 'Photo Only' && !$existingBookings->contains('package_id', $package->id)) {
+                $disabledPackages[] = [
+                    'package_id' => $package->id,
+                    'reason' => 'only_photo_allowed'
+                ];
+            }
+        }
+    }
+    
+    return response()->json([
+        'is_available' => $existingBookings->isEmpty(),
+        'has_exclusive_booking' => $hasExclusiveBooking,
+        'has_restricted_booking' => $hasRestrictedBooking,
+        'only_photo_allowed' => $onlyPhotoAllowed, // New flag for stricter restriction
+        'existing_bookings' => $existingBookings->map(function ($booking) {
+            return [
+                'package_id' => $booking->package_id,
+                'package_name' => $booking->package->name,
+                'status' => $booking->status_payment,
+            ];
+        }),
+        'restrictions' => $restrictions,
+        'disabled_packages' => $disabledPackages,
+    ]);
+}
+   
     public function checkout(Request $request)
     {
         try {
