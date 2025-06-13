@@ -23,31 +23,50 @@ public function cektanggal($date)
         ->whereIn('status_payment', ['complete', 'partial', 'paid'])
         ->with('package')
         ->get();
-        
-    $exclusivePackages = [
-        'Prewedding Neusweat',
-        'Traditional Neusweat', 
-        'Before Neusweat',
-        'Wedding Neudeluxe'
+
+    // Prioritas paket (dari dampak paling tinggi)
+    $priorityOrder = [
+        'exclusive' => [
+            'Prewedding Neusweat',
+            'Traditional Neusweat',
+            'Before Neusweat',
+            'Wedding Neudeluxe'
+        ],
+        'restricted' => [
+            'Wedding Neusweat',
+            'Prewedding Neubasic',
+            'Traditional Neubasic',
+            'Before Neubasic'
+        ]
     ];
-    
-    $restrictedPackages = [
-        'Wedding Neusweat',
-        'Prewedding Neubasic',
-        'Traditional Neubasic',
-        'Before Neubasic'
-    ];
-    
+
     $restrictions = [];
     $hasExclusiveBooking = false;
     $hasRestrictedBooking = false;
 
-    // GREEDY STEP: prioritaskan exclusive lebih dulu, jika ketemu, langsung putus
-    foreach ($existingBookings as $booking) {
+    /**
+     * =====================================================
+     * GREEDY ALGORITHM STRATEGY:
+     * 1. Lakukan proses PENGURUTAN berdasarkan prioritas:
+     *    - Paket eksklusif dicek lebih dulu karena dampaknya tertinggi
+     * 2. Optimasi lokal:
+     *    - Ambil keputusan optimal lokal (paket eksklusif) lebih dulu
+     *    - Jika ditemukan, langsung berhenti (greedy stop)
+     * =====================================================
+     */
+
+    // Urutkan bookings sesuai prioritas (exclusive > restricted > others)
+    $sortedBookings = $existingBookings->sortBy(function ($booking) use ($priorityOrder) {
+        $name = $booking->package->name;
+        if (in_array($name, $priorityOrder['exclusive'])) return 1;
+        if (in_array($name, $priorityOrder['restricted'])) return 2;
+        return 3; // lower priority
+    });
+
+    foreach ($sortedBookings as $booking) {
         $packageName = $booking->package->name;
 
-        // Greedy pick: ambil yang paling membatasi dulu
-        if (in_array($packageName, $exclusivePackages)) {
+        if (in_array($packageName, $priorityOrder['exclusive'])) {
             $hasExclusiveBooking = true;
             $restrictions[] = [
                 'package_id' => $booking->package_id,
@@ -55,12 +74,10 @@ public function cektanggal($date)
                 'restriction_type' => 'exclusive',
                 'status' => $booking->status_payment
             ];
-            // Greedy stop: tidak perlu cek lainnya jika sudah exclusive
-            break;
+            break; // greedy stop: setelah solusi lokal terbaik ditemukan
         }
 
-        // Jika belum ada exclusive, baru cek restricted
-        if (in_array($packageName, $restrictedPackages)) {
+        if (in_array($packageName, $priorityOrder['restricted'])) {
             $hasRestrictedBooking = true;
             $restrictions[] = [
                 'package_id' => $booking->package_id,
@@ -68,15 +85,17 @@ public function cektanggal($date)
                 'restriction_type' => 'restricted',
                 'status' => $booking->status_payment
             ];
-            // Catatan: bisa lanjut cari lagi, tapi hanya restricted
+            // tidak break agar bisa dapat semua yang restricted
         }
     }
 
+    // Ambil semua paket untuk dibandingkan
     $allPackages = Packages::all();
     $disabledPackages = [];
     $onlyPhotoAllowed = false;
 
     if ($hasExclusiveBooking) {
+        // Jika paket eksklusif dipesan → nonaktifkan semua paket lain
         foreach ($allPackages as $package) {
             if (!$existingBookings->contains('package_id', $package->id)) {
                 $disabledPackages[] = [
@@ -86,6 +105,7 @@ public function cektanggal($date)
             }
         }
     } elseif ($hasRestrictedBooking) {
+        // Jika hanya paket terbatas dipesan → hanya Photo Only yang diizinkan
         $onlyPhotoAllowed = true;
         foreach ($allPackages as $package) {
             if ($package->name !== 'Photo Only' && !$existingBookings->contains('package_id', $package->id)) {
@@ -113,7 +133,6 @@ public function cektanggal($date)
         'disabled_packages' => $disabledPackages,
     ]);
 }
-
    
     public function checkout(Request $request)
     {
