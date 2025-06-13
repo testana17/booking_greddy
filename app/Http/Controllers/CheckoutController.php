@@ -17,14 +17,13 @@ use Illuminate\Support\Facades\Mail;
 class CheckoutController extends Controller
 {
     
- public function cektanggal($date)
+public function cektanggal($date)
 {
     $existingBookings = Booking::where('booking_date', $date)
         ->whereIn('status_payment', ['complete', 'partial', 'paid'])
         ->with('package')
         ->get();
         
-    // Define package restrictions
     $exclusivePackages = [
         'Prewedding Neusweat',
         'Traditional Neusweat', 
@@ -42,11 +41,12 @@ class CheckoutController extends Controller
     $restrictions = [];
     $hasExclusiveBooking = false;
     $hasRestrictedBooking = false;
-    
+
+    // GREEDY STEP: prioritaskan exclusive lebih dulu, jika ketemu, langsung putus
     foreach ($existingBookings as $booking) {
         $packageName = $booking->package->name;
-        
-        // Check if there's an exclusive package booking
+
+        // Greedy pick: ambil yang paling membatasi dulu
         if (in_array($packageName, $exclusivePackages)) {
             $hasExclusiveBooking = true;
             $restrictions[] = [
@@ -55,9 +55,11 @@ class CheckoutController extends Controller
                 'restriction_type' => 'exclusive',
                 'status' => $booking->status_payment
             ];
+            // Greedy stop: tidak perlu cek lainnya jika sudah exclusive
+            break;
         }
-        
-        // Check if there's a restricted package booking
+
+        // Jika belum ada exclusive, baru cek restricted
         if (in_array($packageName, $restrictedPackages)) {
             $hasRestrictedBooking = true;
             $restrictions[] = [
@@ -66,16 +68,15 @@ class CheckoutController extends Controller
                 'restriction_type' => 'restricted',
                 'status' => $booking->status_payment
             ];
+            // Catatan: bisa lanjut cari lagi, tapi hanya restricted
         }
     }
-    
-    // Get all packages for comparison
+
     $allPackages = Packages::all();
     $disabledPackages = [];
     $onlyPhotoAllowed = false;
-    
+
     if ($hasExclusiveBooking) {
-        // If exclusive package is booked, disable all other packages
         foreach ($allPackages as $package) {
             if (!$existingBookings->contains('package_id', $package->id)) {
                 $disabledPackages[] = [
@@ -85,10 +86,8 @@ class CheckoutController extends Controller
             }
         }
     } elseif ($hasRestrictedBooking) {
-        // If restricted package is booked, only allow Photo Only
         $onlyPhotoAllowed = true;
         foreach ($allPackages as $package) {
-            // Disable all packages except Photo Only and already booked packages
             if ($package->name !== 'Photo Only' && !$existingBookings->contains('package_id', $package->id)) {
                 $disabledPackages[] = [
                     'package_id' => $package->id,
@@ -97,12 +96,12 @@ class CheckoutController extends Controller
             }
         }
     }
-    
+
     return response()->json([
         'is_available' => $existingBookings->isEmpty(),
         'has_exclusive_booking' => $hasExclusiveBooking,
         'has_restricted_booking' => $hasRestrictedBooking,
-        'only_photo_allowed' => $onlyPhotoAllowed, // New flag for stricter restriction
+        'only_photo_allowed' => $onlyPhotoAllowed,
         'existing_bookings' => $existingBookings->map(function ($booking) {
             return [
                 'package_id' => $booking->package_id,
@@ -114,6 +113,7 @@ class CheckoutController extends Controller
         'disabled_packages' => $disabledPackages,
     ]);
 }
+
    
     public function checkout(Request $request)
     {
